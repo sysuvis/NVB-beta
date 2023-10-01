@@ -187,10 +187,11 @@ images = np.stack(images, axis=0)
 # ln = [0 for i in range(10)]
 # # print images
 a = images.transpose(0, 2, 3, 1)
-os.chdir('NVB')
+# os.chdir('NVB')
 for i in range(a.shape[0]):
-    builder = a[i] / 2 + 0.5
-    plt.imsave('static/img/%d.png' % i, builder)
+    image = a[i] / 2 + 0.5
+    static_imsave('%d.png' % i, image)
+    # plt.imsave('static/img/%d.png' % i, image)
     # # 这是个啥，我自己都不记得了
     # if ln[labels[i]] < 4:
     #     plt.imsave('static/img/am/%d_%d.png'%(labels[i], ln[labels[i]]), t)

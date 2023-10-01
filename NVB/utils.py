@@ -8,10 +8,16 @@ from NVB._backend import Container
 from NVB.consts import *
 from sklearn.manifold import TSNE
 import re
+import matplotlib.pyplot as plt
+import os
 
 
 def is_decimal(s):
     return bool(re.match(r'^-?\d+(\.\d+)?$', s))
+
+
+def static_imsave(name, image):
+    plt.imsave('%s/static/img/%s' % (cur_dir, name), image)
 
 
 t_obj = TSNE()

@@ -143,6 +143,7 @@ dmypy.json
 # files
 backup/d3backend.py
 *.png
+*.html
 *.pyc
 *.pth
 r.py

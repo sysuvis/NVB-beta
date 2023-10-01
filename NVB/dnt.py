@@ -4,6 +4,7 @@ from enum import Enum
 import torch
 from PIL import Image
 from NVB.views.view import View
+from NVB.consts import cur_dir
 
 
 class Type(Enum):
@@ -75,7 +76,7 @@ class Data:
     def save_img(self, ids, prefix='', suffix='png'):
         value = (self.value - np.min(self.value)) / (np.max(self.value) - np.min(self.value))
         image = Image.fromarray(value.astype('float32'), 'L')
-        image.save('static/img/' + prefix + '-' + str(ids) + '.' + suffix)
+        image.save(cur_dir + '/static/img/' + prefix + '-' + str(ids) + '.' + suffix)
 
     def sign(self):
         t = OtherTransform(np.sign, data=self, root_data=self)

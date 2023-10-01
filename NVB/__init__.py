@@ -16,5 +16,5 @@ __all__ = ['View',
            'Filter', 'Aggregation', 'Reshape', 'Reorder', 'Transpose', 'OtherTransform',
            'Builder',
            'HighLighter', 'MultiHighLighter',
-           'tsne',
+           'tsne', 'static_imsave',
            'cmaps', 'styles']

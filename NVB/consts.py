@@ -1,11 +1,14 @@
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 from matplotlib import colors
+import os
 
 # This variable changes by the version of browser
 if True:
     select_this = 'd3.select(e.srcElement)'
 # select_this = 'd3.select(e.path[0])';
 newline = '\n'
+
+cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def get_colormap2(color_list):
