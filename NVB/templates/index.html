@@ -1,0 +1,2572 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    /*name abc... is preserved.*/
+    
+    #div1 {
+        width: 200px;
+        position: absolute;
+        left: 0px;
+        background-color: gainsboro;
+    }
+
+    button.trigger{
+        display: none;
+    }
+
+    #button1 {
+        position: absolute;
+        top: 5px;
+        left: 10px;
+        width: 80px;
+    }
+
+    #button2 {
+        position: absolute;
+        top: 55px;
+        left: 10px;
+        width: 80px;
+    }
+
+    #button3 {
+        position: absolute;
+        top: 105px;
+        left: 10px;
+        width: 100px;
+    }
+
+    #button_e {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 25px;
+        height: 20px;
+        padding: 1px;
+    }
+
+    #select1{
+        position: absolute;
+        top: 56px;
+        left: 130px;
+    }
+
+    #select2{
+        position: absolute;
+        top: 106px;
+        left: 120px;
+    }
+
+    #div2 {
+        position: absolute;
+        left: 200px;
+        /*background-color: blue;*/
+    }
+
+    .div3 {
+        /*display: flex;*/
+        flex-wrap: wrap;
+        /*padding: 0 4px;*/
+        width: 0px;
+        height: 600px;
+        position: absolute;
+        left: 600px;
+        overflow: auto;
+    }
+    .div3:after {
+        /*content: "";*/
+        display: table;
+        clear: both;
+    }
+
+    .div4 {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+    .div4.hidden {
+        display: none;
+    }
+
+    .toolTip {
+        position: absolute;
+        width: auto;
+        height: auto;
+        padding: 5px;
+        background-color: rgba(240, 248, 255, 0.8);
+        border: 1px solid #ccc;
+        -webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        font-style: 12px;
+        -webkit-box-shadow: 4px 4px 10px rbga(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rbga(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rbga(0, 0, 0, 0.4);
+        /*pointer-events: none;*/
+    }
+    .toolTip.hidden {
+        display: none;
+    }
+    .toolTip p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 20px;
+    }
+    .toolTip button{
+        position: absolute;
+        left: 2px;
+        width: 100px;
+    }
+
+    .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 10px;
+        background: #ddd;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
+    }
+
+    .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #4CAF50;
+        cursor: pointer;
+    }
+
+    .slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #4CAF50;
+        cursor: pointer;
+    }
+
+</style>
+<body>
+
+<div id="div1" style="height:3140px">
+    <button id="button1">Tooltip</button>
+    <button id="button2">Click</button>
+    <button id="button3">SelectorView</button>
+    <button id="button_e"><|></button>
+    <select id="select1">
+        <option>1</option>
+        <option>2</option>
+    </select>
+    <select id="select2">
+        <option>New</option>
+        <option>Union</option>
+        <option>Intersect</option>
+    </select>
+</div>
+<div id="div2">
+    <svg width="3375" , height="3140"></svg>
+    <div class="toolTip" id="toolTip1"></div>
+</div>
+
+<div class="div3" id="div3"></div>
+<div class="div3" id="div4"></div>
+{#<iframe src="" width="0" height="0" frameborder="0" name="frame" style="display:none" ></iframe>#}
+<div class="toolTip" id="toolTip"></div>
+<div class="toolTip" id="toolTip2"></div>
+</body>
+<script src="/static/d3.js" charset="utf-8"></script>
+<script>
+    const d1 = d3.select('#div1'), d2 = d3.select('#div2'), svg = d2.select('svg');
+    const toolTip = d3.select('#toolTip'), toolTip1 = d3.select('#toolTip1'), toolTip2 = d3.select('#toolTip2');
+    const be = document.getElementById('button_e');
+    let x_click, y_click;
+    be.addEventListener('click', () => {
+        if (d1.style('left') == '0px') {
+            d1.transition().style('left', '-200px');
+            d2.transition().style('left', '0px');
+        } else {
+            d1.transition().style('left', '0px');
+            d2.transition().style('left', '200px');
+        }
+    });
+
+    const ifTip = document.getElementById('button1');
+    const mode = document.getElementById('button2');
+    const filter = document.getElementById('select1');
+    const filter2 = document.getElementById('select2'), filter2_ = d3.select(filter2);
+    const ifSV = document.getElementById('button3');
+    /*for (let bu of [be, ifTip, mode, filter, filter2, ifSV]){
+        bu.style.display = 'none';
+    }*/
+
+    let comp_t = false;
+    ifSV.addEventListener('click', () => {
+        if (ifSV.style.backgroundColor == 'aqua') {
+            ifSV.style.backgroundColor = 'white';
+            comp_t = false;
+        } else {
+            ifSV.style.backgroundColor = 'aqua';
+            comp_t = true;
+        }
+    });
+
+    let tipSwitch = [e => {
+        const idx = d3.select(e.srcElement).datum().idx;
+        let y_pos = e.clientY + document.documentElement.scrollTop;
+        let x_pos = e.clientX + document.documentElement.scrollLeft;
+        toolTip.attr('style', 'left:' + x_pos + 'px' + ';top:' + y_pos + 'px').selectAll('*').remove();
+        toolTip.append('img')
+            .attr('src', `static/img/${idx}.png`)
+            .attr('width', 100).attr('height', 100);
+        toolTip.classed('hidden', false);
+    }, () => {
+        toolTip.classed('hidden', true);
+    }];
+    ifTip.addEventListener('click', () => {
+        if(mode.textContent == 'Brush') return;
+        if (ifTip.style.backgroundColor == 'aqua') {
+            ifTip.style.backgroundColor = 'white'
+            d3.selectAll('circle')
+                .on('mouseover', null)
+                .on('mouseout', null);
+        } else {
+            ifTip.style.backgroundColor = 'aqua'
+            d3.selectAll('circle')
+                .on('mouseover', tipSwitch[0])
+                .on('mouseout', tipSwitch[1]);
+        }
+    });mode.addEventListener("click", () => {
+        if(mode.textContent == 'Brush'){
+            mode.textContent = 'Click';
+            if(typeof(brushG) != 'undefined') d3.brush().clear(brushG);
+            g0.call(brush0.extent([[0, 0], [0, 0]]));
+g1.call(brush1.extent([[0, 0], [0, 0]]));
+g2.call(brush2.extent([[0, 0], [0, 0]]));
+g3.call(brush3.extent([[0, 0], [0, 0]]));
+g4.call(brush4.extent([[0, 0], [0, 0]]));
+g5.call(brush5.extent([[0, 0], [0, 0]]));
+g6.call(brush6.extent([[0, 0], [0, 0]]));
+g7.call(brush7.extent([[0, 0], [0, 0]]));
+g8.call(brush8.extent([[0, 0], [0, 0]]));
+g9.call(brush9.extent([[0, 0], [0, 0]]));
+g10.call(brush10.extent([[0, 0], [0, 0]]));
+g11.call(brush11.extent([[0, 0], [0, 0]]));
+g12.call(brush12.extent([[0, 0], [0, 0]]));
+g13.call(brush13.extent([[0, 0], [0, 0]]));
+g14.call(brush14.extent([[0, 0], [0, 0]]));
+g15.call(brush15.extent([[0, 0], [0, 0]]));
+g16.call(brush16.extent([[0, 0], [0, 0]]));
+g17.call(brush17.extent([[0, 0], [0, 0]]));
+g18.call(brush18.extent([[0, 0], [0, 0]]));
+g19.call(brush19.extent([[0, 0], [0, 0]]));
+g20.call(brush20.extent([[0, 0], [0, 0]]));
+g21.call(brush21.extent([[0, 0], [0, 0]]));
+g22.call(brush22.extent([[0, 0], [0, 0]]));
+g23.call(brush23.extent([[0, 0], [0, 0]]));
+g24.call(brush24.extent([[0, 0], [0, 0]]));
+g25.call(brush25.extent([[0, 0], [0, 0]]));
+g26.call(brush26.extent([[0, 0], [0, 0]]));
+g27.call(brush27.extent([[0, 0], [0, 0]]));
+g28.call(brush28.extent([[0, 0], [0, 0]]));
+g29.call(brush29.extent([[0, 0], [0, 0]]));
+        }
+        else{
+            if(ifTip.style.backgroundColor == 'aqua') ifTip.click();
+            mode.textContent = 'Brush';
+            g0.selectAll('rect[class*=overlay]').remove();
+g0.selectAll('rect[class*=handle]').remove();
+g0.call(brush0.extent(extent0));
+g1.selectAll('rect[class*=overlay]').remove();
+g1.selectAll('rect[class*=handle]').remove();
+g1.call(brush1.extent(extent1));
+g2.selectAll('rect[class*=overlay]').remove();
+g2.selectAll('rect[class*=handle]').remove();
+g2.call(brush2.extent(extent2));
+g3.selectAll('rect[class*=overlay]').remove();
+g3.selectAll('rect[class*=handle]').remove();
+g3.call(brush3.extent(extent3));
+g4.selectAll('rect[class*=overlay]').remove();
+g4.selectAll('rect[class*=handle]').remove();
+g4.call(brush4.extent(extent4));
+g5.selectAll('rect[class*=overlay]').remove();
+g5.selectAll('rect[class*=handle]').remove();
+g5.call(brush5.extent(extent5));
+g6.selectAll('rect[class*=overlay]').remove();
+g6.selectAll('rect[class*=handle]').remove();
+g6.call(brush6.extent(extent6));
+g7.selectAll('rect[class*=overlay]').remove();
+g7.selectAll('rect[class*=handle]').remove();
+g7.call(brush7.extent(extent7));
+g8.selectAll('rect[class*=overlay]').remove();
+g8.selectAll('rect[class*=handle]').remove();
+g8.call(brush8.extent(extent8));
+g9.selectAll('rect[class*=overlay]').remove();
+g9.selectAll('rect[class*=handle]').remove();
+g9.call(brush9.extent(extent9));
+g10.selectAll('rect[class*=overlay]').remove();
+g10.selectAll('rect[class*=handle]').remove();
+g10.call(brush10.extent(extent10));
+g11.selectAll('rect[class*=overlay]').remove();
+g11.selectAll('rect[class*=handle]').remove();
+g11.call(brush11.extent(extent11));
+g12.selectAll('rect[class*=overlay]').remove();
+g12.selectAll('rect[class*=handle]').remove();
+g12.call(brush12.extent(extent12));
+g13.selectAll('rect[class*=overlay]').remove();
+g13.selectAll('rect[class*=handle]').remove();
+g13.call(brush13.extent(extent13));
+g14.selectAll('rect[class*=overlay]').remove();
+g14.selectAll('rect[class*=handle]').remove();
+g14.call(brush14.extent(extent14));
+g15.selectAll('rect[class*=overlay]').remove();
+g15.selectAll('rect[class*=handle]').remove();
+g15.call(brush15.extent(extent15));
+g16.selectAll('rect[class*=overlay]').remove();
+g16.selectAll('rect[class*=handle]').remove();
+g16.call(brush16.extent(extent16));
+g17.selectAll('rect[class*=overlay]').remove();
+g17.selectAll('rect[class*=handle]').remove();
+g17.call(brush17.extent(extent17));
+g18.selectAll('rect[class*=overlay]').remove();
+g18.selectAll('rect[class*=handle]').remove();
+g18.call(brush18.extent(extent18));
+g19.selectAll('rect[class*=overlay]').remove();
+g19.selectAll('rect[class*=handle]').remove();
+g19.call(brush19.extent(extent19));
+g20.selectAll('rect[class*=overlay]').remove();
+g20.selectAll('rect[class*=handle]').remove();
+g20.call(brush20.extent(extent20));
+g21.selectAll('rect[class*=overlay]').remove();
+g21.selectAll('rect[class*=handle]').remove();
+g21.call(brush21.extent(extent21));
+g22.selectAll('rect[class*=overlay]').remove();
+g22.selectAll('rect[class*=handle]').remove();
+g22.call(brush22.extent(extent22));
+g23.selectAll('rect[class*=overlay]').remove();
+g23.selectAll('rect[class*=handle]').remove();
+g23.call(brush23.extent(extent23));
+g24.selectAll('rect[class*=overlay]').remove();
+g24.selectAll('rect[class*=handle]').remove();
+g24.call(brush24.extent(extent24));
+g25.selectAll('rect[class*=overlay]').remove();
+g25.selectAll('rect[class*=handle]').remove();
+g25.call(brush25.extent(extent25));
+g26.selectAll('rect[class*=overlay]').remove();
+g26.selectAll('rect[class*=handle]').remove();
+g26.call(brush26.extent(extent26));
+g27.selectAll('rect[class*=overlay]').remove();
+g27.selectAll('rect[class*=handle]').remove();
+g27.call(brush27.extent(extent27));
+g28.selectAll('rect[class*=overlay]').remove();
+g28.selectAll('rect[class*=handle]').remove();
+g28.call(brush28.extent(extent28));
+g29.selectAll('rect[class*=overlay]').remove();
+g29.selectAll('rect[class*=handle]').remove();
+g29.call(brush29.extent(extent29));
+        }
+    });
+
+    filter.addEventListener("change", () => {
+        const idx = filter.selectedIndex;
+        d3.json(`/set_click_mode/${idx}`);
+    });
+    filter2.addEventListener("change", () => {
+        const idx = filter2.selectedIndex;
+        d3.json(`/set_set_mode/${idx}`);
+    });
+
+    let det; //debug temp variable
+    let triggers = new Array();
+    let highlighters = new Array();
+    let brushG;
+    let brush_ids = new Array();
+    let empty_r;
+    let prev_r_;
+
+    let gva = svg.append('g').attr('transform', 'translate(200, 0)'), union_pos = 10;
+    gva.style('display', 'none');
+    gva.append('rect')
+        .attr('x', 0).attr('y', 0)
+        .attr('width', 1000).attr('height', 60)
+        .attr("fill", '#fef9ff')
+        .attr('stroke', 'black')
+        .attr('opacity', 0.5);
+    gva.append('rect')
+        .attr('x', 10).attr('y', 10)
+        .attr('width', 40).attr('height', 40)
+        .attr('fill', '#fef9ff').attr('stroke', 'black')
+        .style('stroke-dasharray', ('3, 3'))
+        .attr('opacity', 0.5);
+
+const rx0 = 165, ry0 = 25, rw0 = 1440, rh0 = 35;
+const g0 = svg.append('g').attr('transform', `translate(${rx0}, ${ry0})`).attr('idx', 0);
+const trigger0 = d1.append('button').classed('trigger', true);
+const highlighter0 = d1.append('button').classed('trigger', true);
+triggers.push(trigger0);
+highlighters.push(highlighter0);
+let extent0 = [[0, 0], [rw0, rh0]];
+const brush0 = d3.brush().on("start", () => {
+        if(brushG != g0){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g0;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g0.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw0).attr('height', rh0)
+    .attr("fill", '#EBEBEB')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/0?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx1 = 165, ry1 = 60, rw1 = 360, rh1 = 900;
+const g1 = svg.append('g').attr('transform', `translate(${rx1}, ${ry1})`).attr('idx', 1);
+const trigger1 = d1.append('button').classed('trigger', true);
+const highlighter1 = d1.append('button').classed('trigger', true);
+triggers.push(trigger1);
+highlighters.push(highlighter1);
+let extent1 = [[0, 0], [rw1, rh1]];
+const brush1 = d3.brush().on("start", () => {
+        if(brushG != g1){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g1;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g1.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw1).attr('height', rh1)
+    .attr("fill", 'none')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/1?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx2 = 200, ry2 = 100, rw2 = 300, rh2 = 200;
+const g2 = svg.append('g').attr('transform', `translate(${rx2}, ${ry2})`).attr('idx', 2);
+const trigger2 = d1.append('button').classed('trigger', true);
+const highlighter2 = d1.append('button').classed('trigger', true);
+triggers.push(trigger2);
+highlighters.push(highlighter2);
+let extent2 = [[0, 0], [rw2, rh2]];
+const brush2 = d3.brush().on("start", () => {
+        if(brushG != g2){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g2;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    const sx2 = d3.scaleBand()
+    .range([0, rw2]).paddingInner(1).paddingOuter(0.2);
+const sy2 = d3.scaleLinear()
+    .range([rh2, 0]);
+// maybe forward to the head() in utils.py
+var cross = d3.symbol().type(d3.symbolCross).size(10);
+trigger2.on('click', () => {
+    d3.json('/trigger/2').then(r => {
+        sx2.domain(r['titles']);
+        sy2.domain(r['range']);
+        
+const ax2 = d3.axisBottom(sx2).tickSizeOuter(0), ay2 = d3.axisLeft(sy2).tickSizeOuter(0).tickSizeInner(4);
+g2.selectAll('g[class*=axis_]').remove();
+g2.append('g').call(ax2).attr('transform', 'translate(0, 200)').attr('fill', 'none')
+.classed('axis_x', true).selectAll('.tick').remove();
+g2.append('g').call(ay2).attr('fill', 'none').classed('axis_y', true);
+g2.selectAll('.domain').attr('stroke', '#d3d3d3');
+g2.selectAll('.tick line').attr('stroke', '#d3d3d3');
+g2.selectAll('.tick text').attr('fill', '#708090');
+
+        g2.selectAll('circle.a').remove();
+        g2.selectAll('circle.a')
+            .data(r['rect']).enter().append('circle')
+            .classed('a', true)
+            .attr('width', d => sx2.bandwidth())
+            .attr('height', d => d.height)
+            .attr('cx', d => sx2(d.x))
+            .attr('cy', d => 200 - d.height)
+            .attr('r', 2)
+            .attr('fill', d => d.color)
+            .on('click', e => {
+                // all need to record position
+                y_click = e.clientY + document.documentElement.scrollTop;
+                x_click = e.clientX + document.documentElement.scrollLeft;
+                d3.json(`/click/2?value=${d3.select(e.srcElement).datum().idx}`).then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            });
+        g2.selectAll('path.a').remove();
+        g2.selectAll('path.a')
+           .data(r['path']).enter().append('path')
+           .classed('a', true)
+           .attr('fill', d => d.color)
+           .attr('transform', d => `translate(${sx2(d.x)}, ${200 - d.height}) rotate(45, 0, 0)`)
+           .attr('d', cross);
+    });
+});
+trigger2.dispatch('click');
+highlighter2.on('click', e => {
+    d3.json('/highlighter/2').then(r => {
+        g2.selectAll('circle.a')
+    .attr('fill', d => {
+        if(r == d.idx) return 'red';
+        else return d.color;
+    });;
+    ;
+    
+    });
+});
+
+const rx3 = 200, ry3 = 330, rw3 = 300, rh3 = 300;
+const g3 = svg.append('g').attr('transform', `translate(${rx3}, ${ry3})`).attr('idx', 3);
+const trigger3 = d1.append('button').classed('trigger', true);
+const highlighter3 = d1.append('button').classed('trigger', true);
+triggers.push(trigger3);
+highlighters.push(highlighter3);
+let extent3 = [[0, 0], [rw3, rh3]];
+const brush3 = d3.brush().on("start", () => {
+        if(brushG != g3){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g3;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g3.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw3).attr('height', rh3)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/3?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush3.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g3.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/3?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/3?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger3.on('click', e => {
+    d3.json('/trigger/3').then(r => {
+        g3.selectAll('circle').remove();
+        g3.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/3?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger3.dispatch('click');
+highlighter3.on('click', e => {
+    d3.json('/highlighter/3').then(r => {
+        g3.selectAll('circle')
+    .attr('fill', d => {
+        if(r[3] == d.idx) return 'black';
+        if(r[2].length == 0) return d.color;
+        if(r[2].indexOf(d.idx) == -1) return 'gray';
+        else{
+            if(r[0].indexOf(d.idx) == -1) return 'black';
+            return d.color;
+        }
+    })
+    .attr('r', d => {
+        if(r[3] == d.idx) return 4.2 * d.r;
+        if(r[2].indexOf(d.idx) == -1) return d.r;
+        else return 2.5 * d.r;
+    });;
+    
+    });
+});
+
+const rx4 = 200, ry4 = 660, rw4 = 300, rh4 = 295;
+const g4 = svg.append('g').attr('transform', `translate(${rx4}, ${ry4})`).attr('idx', 4);
+const trigger4 = d1.append('button').classed('trigger', true);
+const highlighter4 = d1.append('button').classed('trigger', true);
+triggers.push(trigger4);
+highlighters.push(highlighter4);
+let extent4 = [[0, 0], [rw4, rh4]];
+const brush4 = d3.brush().on("start", () => {
+        if(brushG != g4){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g4;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g4.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw4).attr('height', rh4)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/4?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush4.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g4.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/4?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/4?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger4.on('click', e => {
+    d3.json('/trigger/4').then(r => {
+        g4.selectAll('circle').remove();
+        g4.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/4?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger4.dispatch('click');
+highlighter4.on('click', e => {
+    d3.json('/highlighter/4').then(r => {
+        g4.selectAll('circle')
+    .attr('r', d => {
+        if(r == d.idx) return 3 * d.r;
+        else return d.r;
+    });
+    
+    });
+});
+
+const rx5 = 166, ry5 = 60, rw5 = 358, rh5 = 30;
+const g5 = svg.append('g').attr('transform', `translate(${rx5}, ${ry5})`).attr('idx', 5);
+const trigger5 = d1.append('button').classed('trigger', true);
+const highlighter5 = d1.append('button').classed('trigger', true);
+triggers.push(trigger5);
+highlighters.push(highlighter5);
+let extent5 = [[0, 0], [rw5, rh5]];
+const brush5 = d3.brush().on("start", () => {
+        if(brushG != g5){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g5;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger5.on('click', () => {
+    d3.json('/trigger/5').then(r => {
+        g5.selectAll('rect.a').remove();
+        g5.append('rect')
+            .classed('a', 'true')
+            .attr('x', 0).attr('y', 0).attr('opacity', r['opacity'])
+            .attr('width', 358).attr('height', 30)
+            .attr('fill', r['bg_color']);
+        g5.selectAll('text').remove();
+        g5.append('text')
+            .attr('fill', r['color'])
+            .attr('x', 358 / 2)
+            .attr('y', 30 / 2)
+            .attr('dy', '.35em')
+            .attr('text-anchor', 'middle')
+            .attr('font-size', 16)
+            .text(r['title']);
+
+    });
+});
+trigger5.dispatch('click');
+        
+const rx6 = 165, ry6 = 320, rw6 = 360, rh6 = 900;
+const g6 = svg.append('g').attr('transform', `translate(${rx6}, ${ry6})`).attr('idx', 6);
+const trigger6 = d1.append('button').classed('trigger', true);
+const highlighter6 = d1.append('button').classed('trigger', true);
+triggers.push(trigger6);
+highlighters.push(highlighter6);
+let extent6 = [[0, 0], [rw6, rh6]];
+const brush6 = d3.brush().on("start", () => {
+        if(brushG != g6){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g6;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger6.on('click', () => {
+    d3.json('/trigger/6').then(r => {
+        g6.selectAll('path').remove();
+        g6.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger6.dispatch('click');
+        
+const rx7 = 165, ry7 = 640, rw7 = 360, rh7 = 900;
+const g7 = svg.append('g').attr('transform', `translate(${rx7}, ${ry7})`).attr('idx', 7);
+const trigger7 = d1.append('button').classed('trigger', true);
+const highlighter7 = d1.append('button').classed('trigger', true);
+triggers.push(trigger7);
+highlighters.push(highlighter7);
+let extent7 = [[0, 0], [rw7, rh7]];
+const brush7 = d3.brush().on("start", () => {
+        if(brushG != g7){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g7;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger7.on('click', () => {
+    d3.json('/trigger/7').then(r => {
+        g7.selectAll('path').remove();
+        g7.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger7.dispatch('click');
+        
+const rx8 = 525, ry8 = 60, rw8 = 360, rh8 = 900;
+const g8 = svg.append('g').attr('transform', `translate(${rx8}, ${ry8})`).attr('idx', 8);
+const trigger8 = d1.append('button').classed('trigger', true);
+const highlighter8 = d1.append('button').classed('trigger', true);
+triggers.push(trigger8);
+highlighters.push(highlighter8);
+let extent8 = [[0, 0], [rw8, rh8]];
+const brush8 = d3.brush().on("start", () => {
+        if(brushG != g8){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g8;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g8.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw8).attr('height', rh8)
+    .attr("fill", 'none')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/8?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx9 = 560, ry9 = 100, rw9 = 300, rh9 = 200;
+const g9 = svg.append('g').attr('transform', `translate(${rx9}, ${ry9})`).attr('idx', 9);
+const trigger9 = d1.append('button').classed('trigger', true);
+const highlighter9 = d1.append('button').classed('trigger', true);
+triggers.push(trigger9);
+highlighters.push(highlighter9);
+let extent9 = [[0, 0], [rw9, rh9]];
+const brush9 = d3.brush().on("start", () => {
+        if(brushG != g9){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g9;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    const sx9 = d3.scaleBand()
+    .range([0, rw9]).paddingInner(1).paddingOuter(0.2);
+const sy9 = d3.scaleLinear()
+    .range([rh9, 0]);
+// maybe forward to the head() in utils.py
+var cross = d3.symbol().type(d3.symbolCross).size(10);
+trigger9.on('click', () => {
+    d3.json('/trigger/9').then(r => {
+        sx9.domain(r['titles']);
+        sy9.domain(r['range']);
+        
+const ax9 = d3.axisBottom(sx9).tickSizeOuter(0), ay9 = d3.axisLeft(sy9).tickSizeOuter(0).tickSizeInner(4);
+g9.selectAll('g[class*=axis_]').remove();
+g9.append('g').call(ax9).attr('transform', 'translate(0, 200)').attr('fill', 'none')
+.classed('axis_x', true).selectAll('.tick').remove();
+g9.append('g').call(ay9).attr('fill', 'none').classed('axis_y', true);
+g9.selectAll('.domain').attr('stroke', '#d3d3d3');
+g9.selectAll('.tick line').attr('stroke', '#d3d3d3');
+g9.selectAll('.tick text').attr('fill', '#708090');
+
+        g9.selectAll('circle.a').remove();
+        g9.selectAll('circle.a')
+            .data(r['rect']).enter().append('circle')
+            .classed('a', true)
+            .attr('width', d => sx9.bandwidth())
+            .attr('height', d => d.height)
+            .attr('cx', d => sx9(d.x))
+            .attr('cy', d => 200 - d.height)
+            .attr('r', 2)
+            .attr('fill', d => d.color)
+            .on('click', e => {
+                // all need to record position
+                y_click = e.clientY + document.documentElement.scrollTop;
+                x_click = e.clientX + document.documentElement.scrollLeft;
+                d3.json(`/click/9?value=${d3.select(e.srcElement).datum().idx}`).then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            });
+        g9.selectAll('path.a').remove();
+        g9.selectAll('path.a')
+           .data(r['path']).enter().append('path')
+           .classed('a', true)
+           .attr('fill', d => d.color)
+           .attr('transform', d => `translate(${sx9(d.x)}, ${200 - d.height}) rotate(45, 0, 0)`)
+           .attr('d', cross);
+    });
+});
+trigger9.dispatch('click');
+highlighter9.on('click', e => {
+    d3.json('/highlighter/9').then(r => {
+        g9.selectAll('circle.a')
+    .attr('fill', d => {
+        if(r == d.idx) return 'red';
+        else return d.color;
+    });;
+    ;
+    
+    });
+});
+
+const rx10 = 560, ry10 = 330, rw10 = 300, rh10 = 300;
+const g10 = svg.append('g').attr('transform', `translate(${rx10}, ${ry10})`).attr('idx', 10);
+const trigger10 = d1.append('button').classed('trigger', true);
+const highlighter10 = d1.append('button').classed('trigger', true);
+triggers.push(trigger10);
+highlighters.push(highlighter10);
+let extent10 = [[0, 0], [rw10, rh10]];
+const brush10 = d3.brush().on("start", () => {
+        if(brushG != g10){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g10;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g10.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw10).attr('height', rh10)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/10?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush10.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g10.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/10?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/10?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger10.on('click', e => {
+    d3.json('/trigger/10').then(r => {
+        g10.selectAll('circle').remove();
+        g10.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/10?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger10.dispatch('click');
+highlighter10.on('click', e => {
+    d3.json('/highlighter/10').then(r => {
+        g10.selectAll('circle')
+    .attr('fill', d => {
+        if(r[3] == d.idx) return 'black';
+        if(r[2].length == 0) return d.color;
+        if(r[2].indexOf(d.idx) == -1) return 'gray';
+        else{
+            if(r[0].indexOf(d.idx) == -1) return 'black';
+            return d.color;
+        }
+    })
+    .attr('r', d => {
+        if(r[3] == d.idx) return 4.2 * d.r;
+        if(r[2].indexOf(d.idx) == -1) return d.r;
+        else return 2.5 * d.r;
+    });;
+    
+    });
+});
+
+const rx11 = 560, ry11 = 660, rw11 = 300, rh11 = 295;
+const g11 = svg.append('g').attr('transform', `translate(${rx11}, ${ry11})`).attr('idx', 11);
+const trigger11 = d1.append('button').classed('trigger', true);
+const highlighter11 = d1.append('button').classed('trigger', true);
+triggers.push(trigger11);
+highlighters.push(highlighter11);
+let extent11 = [[0, 0], [rw11, rh11]];
+const brush11 = d3.brush().on("start", () => {
+        if(brushG != g11){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g11;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g11.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw11).attr('height', rh11)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/11?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush11.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g11.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/11?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/11?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger11.on('click', e => {
+    d3.json('/trigger/11').then(r => {
+        g11.selectAll('circle').remove();
+        g11.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/11?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger11.dispatch('click');
+highlighter11.on('click', e => {
+    d3.json('/highlighter/11').then(r => {
+        g11.selectAll('circle')
+    .attr('r', d => {
+        if(r == d.idx) return 3 * d.r;
+        else return d.r;
+    });
+    
+    });
+});
+
+const rx12 = 526, ry12 = 60, rw12 = 358, rh12 = 30;
+const g12 = svg.append('g').attr('transform', `translate(${rx12}, ${ry12})`).attr('idx', 12);
+const trigger12 = d1.append('button').classed('trigger', true);
+const highlighter12 = d1.append('button').classed('trigger', true);
+triggers.push(trigger12);
+highlighters.push(highlighter12);
+let extent12 = [[0, 0], [rw12, rh12]];
+const brush12 = d3.brush().on("start", () => {
+        if(brushG != g12){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g12;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger12.on('click', () => {
+    d3.json('/trigger/12').then(r => {
+        g12.selectAll('rect.a').remove();
+        g12.append('rect')
+            .classed('a', 'true')
+            .attr('x', 0).attr('y', 0).attr('opacity', r['opacity'])
+            .attr('width', 358).attr('height', 30)
+            .attr('fill', r['bg_color']);
+        g12.selectAll('text').remove();
+        g12.append('text')
+            .attr('fill', r['color'])
+            .attr('x', 358 / 2)
+            .attr('y', 30 / 2)
+            .attr('dy', '.35em')
+            .attr('text-anchor', 'middle')
+            .attr('font-size', 16)
+            .text(r['title']);
+
+    });
+});
+trigger12.dispatch('click');
+        
+const rx13 = 525, ry13 = 320, rw13 = 360, rh13 = 900;
+const g13 = svg.append('g').attr('transform', `translate(${rx13}, ${ry13})`).attr('idx', 13);
+const trigger13 = d1.append('button').classed('trigger', true);
+const highlighter13 = d1.append('button').classed('trigger', true);
+triggers.push(trigger13);
+highlighters.push(highlighter13);
+let extent13 = [[0, 0], [rw13, rh13]];
+const brush13 = d3.brush().on("start", () => {
+        if(brushG != g13){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g13;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger13.on('click', () => {
+    d3.json('/trigger/13').then(r => {
+        g13.selectAll('path').remove();
+        g13.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger13.dispatch('click');
+        
+const rx14 = 525, ry14 = 640, rw14 = 360, rh14 = 900;
+const g14 = svg.append('g').attr('transform', `translate(${rx14}, ${ry14})`).attr('idx', 14);
+const trigger14 = d1.append('button').classed('trigger', true);
+const highlighter14 = d1.append('button').classed('trigger', true);
+triggers.push(trigger14);
+highlighters.push(highlighter14);
+let extent14 = [[0, 0], [rw14, rh14]];
+const brush14 = d3.brush().on("start", () => {
+        if(brushG != g14){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g14;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger14.on('click', () => {
+    d3.json('/trigger/14').then(r => {
+        g14.selectAll('path').remove();
+        g14.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger14.dispatch('click');
+        
+const rx15 = 885, ry15 = 60, rw15 = 360, rh15 = 900;
+const g15 = svg.append('g').attr('transform', `translate(${rx15}, ${ry15})`).attr('idx', 15);
+const trigger15 = d1.append('button').classed('trigger', true);
+const highlighter15 = d1.append('button').classed('trigger', true);
+triggers.push(trigger15);
+highlighters.push(highlighter15);
+let extent15 = [[0, 0], [rw15, rh15]];
+const brush15 = d3.brush().on("start", () => {
+        if(brushG != g15){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g15;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g15.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw15).attr('height', rh15)
+    .attr("fill", 'none')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/15?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx16 = 920, ry16 = 100, rw16 = 300, rh16 = 200;
+const g16 = svg.append('g').attr('transform', `translate(${rx16}, ${ry16})`).attr('idx', 16);
+const trigger16 = d1.append('button').classed('trigger', true);
+const highlighter16 = d1.append('button').classed('trigger', true);
+triggers.push(trigger16);
+highlighters.push(highlighter16);
+let extent16 = [[0, 0], [rw16, rh16]];
+const brush16 = d3.brush().on("start", () => {
+        if(brushG != g16){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g16;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    const sx16 = d3.scaleBand()
+    .range([0, rw16]).paddingInner(1).paddingOuter(0.2);
+const sy16 = d3.scaleLinear()
+    .range([rh16, 0]);
+// maybe forward to the head() in utils.py
+var cross = d3.symbol().type(d3.symbolCross).size(10);
+trigger16.on('click', () => {
+    d3.json('/trigger/16').then(r => {
+        sx16.domain(r['titles']);
+        sy16.domain(r['range']);
+        
+const ax16 = d3.axisBottom(sx16).tickSizeOuter(0), ay16 = d3.axisLeft(sy16).tickSizeOuter(0).tickSizeInner(4);
+g16.selectAll('g[class*=axis_]').remove();
+g16.append('g').call(ax16).attr('transform', 'translate(0, 200)').attr('fill', 'none')
+.classed('axis_x', true).selectAll('.tick').remove();
+g16.append('g').call(ay16).attr('fill', 'none').classed('axis_y', true);
+g16.selectAll('.domain').attr('stroke', '#d3d3d3');
+g16.selectAll('.tick line').attr('stroke', '#d3d3d3');
+g16.selectAll('.tick text').attr('fill', '#708090');
+
+        g16.selectAll('circle.a').remove();
+        g16.selectAll('circle.a')
+            .data(r['rect']).enter().append('circle')
+            .classed('a', true)
+            .attr('width', d => sx16.bandwidth())
+            .attr('height', d => d.height)
+            .attr('cx', d => sx16(d.x))
+            .attr('cy', d => 200 - d.height)
+            .attr('r', 2)
+            .attr('fill', d => d.color)
+            .on('click', e => {
+                // all need to record position
+                y_click = e.clientY + document.documentElement.scrollTop;
+                x_click = e.clientX + document.documentElement.scrollLeft;
+                d3.json(`/click/16?value=${d3.select(e.srcElement).datum().idx}`).then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            });
+        g16.selectAll('path.a').remove();
+        g16.selectAll('path.a')
+           .data(r['path']).enter().append('path')
+           .classed('a', true)
+           .attr('fill', d => d.color)
+           .attr('transform', d => `translate(${sx16(d.x)}, ${200 - d.height}) rotate(45, 0, 0)`)
+           .attr('d', cross);
+    });
+});
+trigger16.dispatch('click');
+highlighter16.on('click', e => {
+    d3.json('/highlighter/16').then(r => {
+        g16.selectAll('circle.a')
+    .attr('fill', d => {
+        if(r == d.idx) return 'red';
+        else return d.color;
+    });;
+    ;
+    
+    });
+});
+
+const rx17 = 920, ry17 = 330, rw17 = 300, rh17 = 300;
+const g17 = svg.append('g').attr('transform', `translate(${rx17}, ${ry17})`).attr('idx', 17);
+const trigger17 = d1.append('button').classed('trigger', true);
+const highlighter17 = d1.append('button').classed('trigger', true);
+triggers.push(trigger17);
+highlighters.push(highlighter17);
+let extent17 = [[0, 0], [rw17, rh17]];
+const brush17 = d3.brush().on("start", () => {
+        if(brushG != g17){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g17;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g17.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw17).attr('height', rh17)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/17?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush17.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g17.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/17?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/17?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger17.on('click', e => {
+    d3.json('/trigger/17').then(r => {
+        g17.selectAll('circle').remove();
+        g17.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/17?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger17.dispatch('click');
+highlighter17.on('click', e => {
+    d3.json('/highlighter/17').then(r => {
+        g17.selectAll('circle')
+    .attr('fill', d => {
+        if(r[3] == d.idx) return 'black';
+        if(r[2].length == 0) return d.color;
+        if(r[2].indexOf(d.idx) == -1) return 'gray';
+        else{
+            if(r[0].indexOf(d.idx) == -1) return 'black';
+            return d.color;
+        }
+    })
+    .attr('r', d => {
+        if(r[3] == d.idx) return 4.2 * d.r;
+        if(r[2].indexOf(d.idx) == -1) return d.r;
+        else return 2.5 * d.r;
+    });;
+    
+    });
+});
+
+const rx18 = 920, ry18 = 660, rw18 = 300, rh18 = 295;
+const g18 = svg.append('g').attr('transform', `translate(${rx18}, ${ry18})`).attr('idx', 18);
+const trigger18 = d1.append('button').classed('trigger', true);
+const highlighter18 = d1.append('button').classed('trigger', true);
+triggers.push(trigger18);
+highlighters.push(highlighter18);
+let extent18 = [[0, 0], [rw18, rh18]];
+const brush18 = d3.brush().on("start", () => {
+        if(brushG != g18){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g18;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g18.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 1)
+    .attr('width', rw18).attr('height', rh18)
+    .attr("fill", 'none')
+    .attr('stroke', 'white')
+    .attr('stroke-width', 1)
+    .attr('stroke-opacity', 0.1)
+    .on('click', e => {
+        d3.json(`/click/18?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+brush18.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids = [];
+            g18.selectAll("circle")
+                .each(d => {
+                    const cx = d.cx, cy = d.cy, pos = brush_ids.indexOf(d.idx);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) {
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else if(pos != -1) brush_ids.splice(pos, 1);
+                });  
+            d3.json(`/brush/18?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/18?value=${brush_ids}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger18.on('click', e => {
+    d3.json('/trigger/18').then(r => {
+        g18.selectAll('circle').remove();
+        g18.selectAll('circle')
+            .data(r).enter().append('circle')
+            .attr('r', d => d.r)
+            .attr('cx', d => d.cx)
+            .attr('cy', d => d.cy) 
+            .attr('fill', d => d.color)
+            .attr('opacity', 1)
+            //.attr('opacity', d => d.opacity)
+            .on('click', e => {
+                const idx = d3.select(e.srcElement).datum().idx;
+                d3.json(`/click/18?value=${idx}`).then(r => {
+            
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            })
+            ;
+    });
+});
+trigger18.dispatch('click');
+highlighter18.on('click', e => {
+    d3.json('/highlighter/18').then(r => {
+        g18.selectAll('circle')
+    .attr('r', d => {
+        if(r == d.idx) return 3 * d.r;
+        else return d.r;
+    });
+    
+    });
+});
+
+const rx19 = 886, ry19 = 60, rw19 = 358, rh19 = 30;
+const g19 = svg.append('g').attr('transform', `translate(${rx19}, ${ry19})`).attr('idx', 19);
+const trigger19 = d1.append('button').classed('trigger', true);
+const highlighter19 = d1.append('button').classed('trigger', true);
+triggers.push(trigger19);
+highlighters.push(highlighter19);
+let extent19 = [[0, 0], [rw19, rh19]];
+const brush19 = d3.brush().on("start", () => {
+        if(brushG != g19){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g19;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger19.on('click', () => {
+    d3.json('/trigger/19').then(r => {
+        g19.selectAll('rect.a').remove();
+        g19.append('rect')
+            .classed('a', 'true')
+            .attr('x', 0).attr('y', 0).attr('opacity', r['opacity'])
+            .attr('width', 358).attr('height', 30)
+            .attr('fill', r['bg_color']);
+        g19.selectAll('text').remove();
+        g19.append('text')
+            .attr('fill', r['color'])
+            .attr('x', 358 / 2)
+            .attr('y', 30 / 2)
+            .attr('dy', '.35em')
+            .attr('text-anchor', 'middle')
+            .attr('font-size', 16)
+            .text(r['title']);
+
+    });
+});
+trigger19.dispatch('click');
+        
+const rx20 = 885, ry20 = 320, rw20 = 360, rh20 = 900;
+const g20 = svg.append('g').attr('transform', `translate(${rx20}, ${ry20})`).attr('idx', 20);
+const trigger20 = d1.append('button').classed('trigger', true);
+const highlighter20 = d1.append('button').classed('trigger', true);
+triggers.push(trigger20);
+highlighters.push(highlighter20);
+let extent20 = [[0, 0], [rw20, rh20]];
+const brush20 = d3.brush().on("start", () => {
+        if(brushG != g20){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g20;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger20.on('click', () => {
+    d3.json('/trigger/20').then(r => {
+        g20.selectAll('path').remove();
+        g20.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger20.dispatch('click');
+        
+const rx21 = 885, ry21 = 640, rw21 = 360, rh21 = 900;
+const g21 = svg.append('g').attr('transform', `translate(${rx21}, ${ry21})`).attr('idx', 21);
+const trigger21 = d1.append('button').classed('trigger', true);
+const highlighter21 = d1.append('button').classed('trigger', true);
+triggers.push(trigger21);
+highlighters.push(highlighter21);
+let extent21 = [[0, 0], [rw21, rh21]];
+const brush21 = d3.brush().on("start", () => {
+        if(brushG != g21){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g21;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger21.on('click', () => {
+    d3.json('/trigger/21').then(r => {
+        g21.selectAll('path').remove();
+        g21.append('path')
+            .attr('d', d3.line()([[r['padding'][0], 0], [360-r['padding'][1], 0]]))
+            .attr('stroke', r['color'])
+            .attr('stroke-width', r['width'])
+            .attr('stroke-opacity', r['opacity']);
+    });
+});
+trigger21.dispatch('click');
+        
+const rx22 = 45, ry22 = 90, rw22 = 120, rh22 = 230;
+const g22 = svg.append('g').attr('transform', `translate(${rx22}, ${ry22})`).attr('idx', 22);
+const trigger22 = d1.append('button').classed('trigger', true);
+const highlighter22 = d1.append('button').classed('trigger', true);
+triggers.push(trigger22);
+highlighters.push(highlighter22);
+let extent22 = [[0, 0], [rw22, rh22]];
+const brush22 = d3.brush().on("start", () => {
+        if(brushG != g22){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g22;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g22.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw22).attr('height', rh22)
+    .attr("fill", '#EBEBEB')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/22?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx23 = 45, ry23 = 320, rw23 = 120, rh23 = 320;
+const g23 = svg.append('g').attr('transform', `translate(${rx23}, ${ry23})`).attr('idx', 23);
+const trigger23 = d1.append('button').classed('trigger', true);
+const highlighter23 = d1.append('button').classed('trigger', true);
+triggers.push(trigger23);
+highlighters.push(highlighter23);
+let extent23 = [[0, 0], [rw23, rh23]];
+const brush23 = d3.brush().on("start", () => {
+        if(brushG != g23){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g23;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g23.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw23).attr('height', rh23)
+    .attr("fill", '#EBEBEB')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/23?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx24 = 1245, ry24 = 60, rw24 = 500, rh24 = 400;
+const g24 = svg.append('g').attr('transform', `translate(${rx24}, ${ry24})`).attr('idx', 24);
+const trigger24 = d1.append('button').classed('trigger', true);
+const highlighter24 = d1.append('button').classed('trigger', true);
+triggers.push(trigger24);
+highlighters.push(highlighter24);
+let extent24 = [[0, 0], [rw24, rh24]];
+const brush24 = d3.brush().on("start", () => {
+        if(brushG != g24){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g24;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g24.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw24).attr('height', rh24)
+    .attr("fill", 'none')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/24?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx25 = 1245, ry25 = 460, rw25 = 500, rh25 = 500;
+const g25 = svg.append('g').attr('transform', `translate(${rx25}, ${ry25})`).attr('idx', 25);
+const trigger25 = d1.append('button').classed('trigger', true);
+const highlighter25 = d1.append('button').classed('trigger', true);
+triggers.push(trigger25);
+highlighters.push(highlighter25);
+let extent25 = [[0, 0], [rw25, rh25]];
+const brush25 = d3.brush().on("start", () => {
+        if(brushG != g25){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g25;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g25.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw25).attr('height', rh25)
+    .attr("fill", 'none')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/25?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx26 = 1245, ry26 = 25, rw26 = 500, rh26 = 35;
+const g26 = svg.append('g').attr('transform', `translate(${rx26}, ${ry26})`).attr('idx', 26);
+const trigger26 = d1.append('button').classed('trigger', true);
+const highlighter26 = d1.append('button').classed('trigger', true);
+triggers.push(trigger26);
+highlighters.push(highlighter26);
+let extent26 = [[0, 0], [rw26, rh26]];
+const brush26 = d3.brush().on("start", () => {
+        if(brushG != g26){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g26;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g26.append('rect')
+    .classed('border_', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.6)
+    .attr('width', rw26).attr('height', rh26)
+    .attr("fill", '#EBEBEB')
+    .attr('stroke', 'gray')
+    .attr('stroke-width', 2.6)
+    .attr('stroke-opacity', 0.6)
+    .on('click', e => {
+        d3.json(`/click/26?value=-1`).then(r => {
+            for(let i of r[0]) triggers[i].dispatch('click');
+            for(let i of r[1]) highlighters[i].dispatch('click');
+        });
+    });
+        
+const rx27 = 100, ry27 = 100, rw27 = 100, rh27 = 100;
+const g27 = svg.append('g').attr('transform', `translate(${rx27}, ${ry27})`).attr('idx', 27);
+const trigger27 = d1.append('button').classed('trigger', true);
+const highlighter27 = d1.append('button').classed('trigger', true);
+triggers.push(trigger27);
+highlighters.push(highlighter27);
+let extent27 = [[0, 0], [rw27, rh27]];
+const brush27 = d3.brush().on("start", () => {
+        if(brushG != g27){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g27;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger27.on('click', e => {
+    d3.json('/trigger/27').then(r => {
+        console.log(x_click, y_click, 'fff');
+        toolTip.attr('style', 'left:' + x_click + 'px' + ';top:' + y_click + 'px').selectAll('*').remove();
+        toolTip.style('height', '70px').style('width', '120px').on('click', e => {
+            // toolTip.classed('hidden', true);
+        });
+        toolTip.selectAll('input')
+            .data(r).enter().append('input')
+            .attr('value', d => d.toFixed(2))
+            .style('width', '112px')
+            .attr('id', (d, i) => `input27_${i+1}`);
+        toolTip.append('button')
+            .text('update')
+            .style('position', 'absolute')
+            .style('top', '50px')
+            .style('left', '5px')
+            .style('width', '60px')
+            .on('click', e => {
+                toolTip.classed('hidden', true);
+                const v1 = document.getElementById('input27_1').value, v2 = document.getElementById('input27_2').value;
+                d3.json(`/click/27?v1=${v1}&v2=${v2}`).then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            });
+        toolTip.append('button')
+            .text('cancel')
+            .style('position', 'absolute')
+            .style('top', '50px')
+            .style('left', '65px')
+            .style('width', '60px')
+            .on('click', e => {
+                toolTip.classed('hidden', true);
+            });
+        toolTip.classed('hidden', false);
+    });
+});
+        
+const rx28 = 1305, ry28 = 560, rw28 = 400, rh28 = 300;
+const g28 = svg.append('g').attr('transform', `translate(${rx28}, ${ry28})`).attr('idx', 28);
+const trigger28 = d1.append('button').classed('trigger', true);
+const highlighter28 = d1.append('button').classed('trigger', true);
+triggers.push(trigger28);
+highlighters.push(highlighter28);
+let extent28 = [[0, 0], [rw28, rh28]];
+const brush28 = d3.brush().on("start", () => {
+        if(brushG != g28){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g28;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+g28.append('text')
+    .classed('title_', true)
+    .attr('fill', 'black')
+    .attr('x', -18)
+    .attr('y', -10)
+    //.attr('text-anchor', 'middle')
+    .attr('font-size', '12')
+    .text('Accuracy');
+                     
+// scale can be defined in response.
+const sx28 = d3.scaleBand().paddingInner(1).range([0, rw28]);
+const sy28 = d3.scaleLinear().range([rh28, 0]);
+let threshold28 = 0;
+brush28.on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            brush_ids.splice(0, brush_ids.length);
+            g28.selectAll('path.a')
+                .each(d => {
+                    const temp = d.path;
+                    let flag = false, flag1 = true;
+                    
+        for(let i=0;i<temp.length;i++){
+            if(sx28(temp[i][0])>=x0 && sx28(temp[i][0])<=x1){
+                flag = true;
+                if(temp[i][1]<threshold28){
+                    flag1 = false;
+                    break;
+                }
+            }
+        }
+                    
+                    pos = brush_ids.indexOf(d.idx);
+                    if(flag && flag1){
+                        if(pos == -1) brush_ids.push(d.idx);
+                    }
+                    else{
+                        if(pos != -1) brush_ids.splice(pos, 1);
+                    }
+                });
+            d3.json(`/brush/28?value=${brush_ids}&y0=${sy28.invert(y0)}&y1=${sy28.invert(y1)}&threshold=${threshold28}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+        else{
+            brush_ids = [];
+            d3.json(`/brush/28?value=${brush_ids}&y0=${sy28.invert(y0)}&y1=${sy28.invert(y1)}&threshold=${threshold28}`)
+                .then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+        }
+    });
+trigger28.on('click', () => {
+    d3.json('/trigger/28').then(r => {
+        sx28.domain(r['titles']);
+        sy28.domain(r['y']);
+        const ax28 = d3.axisBottom(sx28);
+const ay28 = d3.axisLeft(sy28);
+if(typeof(r['titles'][0]) == 'number'){
+    const tv28 = r['titles'].filter((d, i) => i % Math.ceil(r['titles'].length/10) == 0);
+    if((r['titles'].length-1) % Math.ceil(r['titles'].length/20) != 0) tv28.push(r['titles'][r['titles'].length-1]);
+    ax28.tickValues(tv28);
+}
+else{
+    ax28.tickFormat(d => d.slice(d.indexOf('-')+1));
+}
+
+g28.append('g').call(ax28).attr('transform', 'translate(0, 300)').attr('fill', 'none');
+g28.append('g').call(ay28).attr('fill', 'none');
+
+        g28.selectAll('path.a').remove();
+        const line28 = d3.line();
+        g28.selectAll('path.a')
+            .data(r['path']).enter().append('path')
+            .classed('a', true)
+            .attr('d', d => line28(d.path.map(v => [sx28(v[0]), sy28(v[1])])))
+            .attr('stroke', d => d.color)
+            .attr('fill', 'none')
+            .attr('opacity', 1);
+        if(r['threshold'].length != 0) threshold28 = r['threshold'][0]['value'];
+        g28.selectAll('path.b').remove();
+        g28.selectAll('path.b')
+            .data(r['threshold']).enter().append('path')
+            .classed('b', true)
+            .attr('d', d => line28(d.path.map(v => [sx28(v[0]), sy28(v[1])])))
+            .attr('stroke', d => d.color)
+            .attr('fill', 'none')
+            .style("stroke-dasharray", "3, 3")
+            .attr('opacity', 1.0);
+        g28.selectAll('rect[class*=overlay]').remove();
+g28.selectAll('rect[class*=handle]').remove();
+g28.call(brush28.extent(extent28));
+    });
+});
+trigger28.dispatch('click');
+highlighter28.on('click', e => {
+    d3.json('/highlighter/28').then(r => {
+        g28.selectAll('path.a');
+    });
+});
+var dl = [{'label': 'Teacher-1', 'color': '#e41a1c'}, {'label': 'Student-1', 'color': '#4daf4a'}, {'label': 'Student-2', 'color': '#984ea3'}];
+var gl = g28.append('g').attr('transform', `translate(${rw28-130}, ${rh28-110})`)
+gl.append('rect')
+    .classed('c', true)
+    .attr('x', 0).attr('y', 0)
+    .attr('opacity', 0.1)
+    .attr('width', 134).attr('height', 110)
+    .attr("fill", 'gray');
+gl.selectAll('path.c')
+    .data(dl).enter().append('path')
+    .classed('c', true)
+    .attr('d', (d, i) => d3.line()([[5, 10+30*i], [50, 10+30*i]]))
+    .attr('stroke', d => d.color);
+gl.selectAll('text.c')
+    .data(dl).enter().append('text')
+    .classed('c', true)
+    .attr('fill', 'black')
+    .attr('x', d => 55)
+    .attr('y', (d, i) => 10+30*i)
+    .attr('dy', '.35em')
+    //.attr('text-anchor', 'middle')
+    .text(d => d.label);
+        
+const rx29 = 1275, ry29 = 85, rw29 = 500, rh29 = 400;
+const g29 = svg.append('g').attr('transform', `translate(${rx29}, ${ry29})`).attr('idx', 29);
+const trigger29 = d1.append('button').classed('trigger', true);
+const highlighter29 = d1.append('button').classed('trigger', true);
+triggers.push(trigger29);
+highlighters.push(highlighter29);
+let extent29 = [[0, 0], [rw29, rh29]];
+const brush29 = d3.brush().on("start", () => {
+        if(brushG != g29){
+            if(typeof(brushG) != "undefined") d3.brush().clear(brushG);
+            brushG = g29;
+        }
+    })
+    .on("end", e => {
+        if(e.selection){
+            const [[x0, y0], [x1, y1]] = e.selection;
+            //...
+        }
+        else{
+            r = empty_r;
+        }
+    });
+    
+trigger29.on('click', () => {
+    d3.json('/trigger/29').then(r => {
+        g29.selectAll('rect.a').remove();
+        g29.selectAll('rect.a')
+            .data(r).enter().append('rect')
+            .classed('a', 'true')
+            .attr('x', d => d.x).attr('y', d => d.y).attr('opacity', d => d.opacity)
+            .attr('width', d => d.width).attr('height', d => d.height)
+            .attr('fill', d => {
+                if(typeof(d.color) != 'undefined') return d.color;
+                else return 'aqua';
+            })
+            .on('click', e => {
+                d3.json(`/click/29?value=${d3.select(e.srcElement).datum().idx}`).then(r => {
+                    for(let i of r[0]) triggers[i].dispatch('click');
+                    for(let i of r[1]) highlighters[i].dispatch('click');
+                });
+            });
+        if(r.length != 0 && typeof(r[0].label) != 'undefined'){
+            g29.selectAll('text').remove();
+            g29.selectAll('text')
+                .data(r)
+                .enter()
+                .append('text')
+                .attr('fill', 'black')
+                .attr('x', d => d.x + d.width / 2)
+                .attr('y', d => d.y + d.height / 2)
+                .attr('dy', '.35em')
+                .attr('text-anchor', 'middle')
+                .attr('font-size', d => d.width * 0.6)
+                .text(d => d.label)
+                .on('click', e => {
+                    d3.json(`/click/29?value=${d3.select(e.srcElement).datum().idx}`).then(r => {
+                        for(let i of r[0]) triggers[i].dispatch('click');
+                        for(let i of r[1]) highlighters[i].dispatch('click');
+                    });
+                });
+        }
+    });
+});
+trigger29.dispatch('click');
+highlighter29.on('click', e => {
+    d3.json('/highlighter/29').then(r => {
+        g29.selectAll('rect.a')
+    .attr('fill', d => {
+        if(d.idt[0] == r[0] || d.idt[1] == r[1]) return d.h_color;
+        return d.color;
+    });
+    
+    });
+});
+        
+const w0 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w0.style('width', '360px')
+    .style('height', '20px')
+    .style('left', '725px')
+    .style('top', '30px');
+const p0 = w0.append('p')
+    .text('step:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', '-15px');
+p0.style('left', `-${p0.node().getBoundingClientRect().width+10+('step:'.length>10?24:0) + ('step:'.length>15?42:0)}px`); 
+        
+w0.append('input')
+    .attr('type', 'range')
+    .attr('min', 0)
+    .attr('max', 1)
+    .attr('value', 0)
+    .classed('slider', true)
+    .attr('id', 'w0')
+    .style('width', '100%')
+    .style('height', '100%')
+    .on('input', e => {
+        const value = document.getElementById('w0').value;
+        d3.json(`/widget/0?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });
+    });
+w0.append('button')
+    .text('Play')
+    .style('position', 'absolute')
+    .style('width', '40px')
+    .style('height', '21px')
+    .style('left', '370px')
+    .style('top', '1.5px')
+    .on('click', e => {
+        const s = document.getElementById('w0');
+        let i = 0;
+        let intervalId = setInterval(() => {
+            s.value = i;
+            d3.select(s).dispatch('input');
+            i++;
+            if(i > 1) clearInterval(intervalId);
+        }, 800);
+    });
+document.getElementById('w0').value = 1;
+w0.select('input').dispatch('input');
+        
+const w1 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w1.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '450px');
+const p1 = w1.append('p')
+    .text('label comparison:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', `${(-35-('label comparison:'.length>10?30:0))}px`)
+    .style('left', '0px'); 
+        
+const select1 = w1.append('select').attr('id', 'w1');
+const options1 = ['ground', 'pred', 'kmeans'];
+select1.selectAll('option')
+    .data(options1)
+    .enter()
+    .append('option')
+    .text(d => d);
+select1
+    .on('change', e => {
+        const value = document.getElementById('w1').selectedIndex;
+        d3.json(`/widget/1?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select1.node().selectedIndex = 0;
+select1.dispatch('change');
+        
+const w2 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w2.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '495px');
+const p2 = w2.append('p')
+    .text('and')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', `${(-35-('and'.length>10?30:0))}px`)
+    .style('left', '0px'); 
+        
+const select2 = w2.append('select').attr('id', 'w2');
+const options2 = ['ground', 'pred', 'kmeans'];
+select2.selectAll('option')
+    .data(options2)
+    .enter()
+    .append('option')
+    .text(d => d);
+select2
+    .on('change', e => {
+        const value = document.getElementById('w2').selectedIndex;
+        d3.json(`/widget/2?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select2.node().selectedIndex = 0;
+select2.dispatch('change');
+        
+const w3 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w3.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '225px')
+    .style('top', '30px');
+const p3 = w3.append('p')
+    .text('layer:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', '-15px');
+p3.style('left', `-${p3.node().getBoundingClientRect().width+10+('layer:'.length>10?24:0) + ('layer:'.length>15?42:0)}px`); 
+        
+const select3 = w3.append('select').attr('id', 'w3');
+const options3 = ['conv1', 'conv2'];
+select3.selectAll('option')
+    .data(options3)
+    .enter()
+    .append('option')
+    .text(d => d);
+select3
+    .on('change', e => {
+        const value = document.getElementById('w3').selectedIndex;
+        d3.json(`/widget/3?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select3.node().selectedIndex = 0;
+select3.dispatch('change');
+        
+const w4 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w4.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '583px');
+const p4 = w4.append('p')
+    .text('match mode:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', `${(-35-('match mode:'.length>10?30:0))}px`)
+    .style('left', '0px'); 
+        
+const select4 = w4.append('select').attr('id', 'w4');
+const options4 = ['near', 'label'];
+select4.selectAll('option')
+    .data(options4)
+    .enter()
+    .append('option')
+    .text(d => d);
+select4
+    .on('change', e => {
+        const value = document.getElementById('w4').selectedIndex;
+        d3.json(`/widget/4?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select4.node().selectedIndex = 0;
+select4.dispatch('change');
+        
+const w5 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w5.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '170px');
+const p5 = w5.append('p')
+    .text('by:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', `${(-35-('by:'.length>10?30:0))}px`)
+    .style('left', '0px'); 
+        
+const select5 = w5.append('select').attr('id', 'w5');
+const options5 = ['var', 'avg'];
+select5.selectAll('option')
+    .data(options5)
+    .enter()
+    .append('option')
+    .text(d => d);
+select5
+    .on('change', e => {
+        const value = document.getElementById('w5').selectedIndex;
+        d3.json(`/widget/5?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select5.node().selectedIndex = 0;
+select5.dispatch('change');
+        
+const w6 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w6.style('width', '60px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '120px');
+const p6 = w6.append('p')
+    .text('')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', '-15px');
+p6.style('left', `-${p6.node().getBoundingClientRect().width+10+(''.length>10?24:0) + (''.length>15?42:0)}px`); 
+        
+    w6.append('button')
+        .text('sort')
+        .style('width', '100%')
+        .style('height', '100%')
+        .on('click', e => {
+            d3.json(`/widget/6?value=sort`).then(r => {
+                for(let i of r) triggers[i].dispatch('click');
+            });
+        });
+            
+const w7 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w7.style('width', '20px')
+    .style('height', '20px')
+    .style('left', '55px')
+    .style('top', '350px');
+const p7 = w7.append('p')
+    .text('label:')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', `${(-35-('label:'.length>10?30:0))}px`)
+    .style('left', '0px'); 
+        
+const select7 = w7.append('select').attr('id', 'w7');
+const options7 = ['ground', 'pred', 'kmeans'];
+select7.selectAll('option')
+    .data(options7)
+    .enter()
+    .append('option')
+    .text(d => d);
+select7
+    .on('change', e => {
+        const value = document.getElementById('w7').selectedIndex;
+        d3.json(`/widget/7?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select7.node().selectedIndex = 0;
+select7.dispatch('change');
+        
+const w8 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w8.style('width', '36px')
+    .style('height', '20px')
+    .style('left', '1425px')
+    .style('top', '30px');
+const p8 = w8.append('p')
+    .text('similarity between')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', '-15px');
+p8.style('left', `-${p8.node().getBoundingClientRect().width+10+('similarity between'.length>10?24:0) + ('similarity between'.length>15?42:0)}px`); 
+        
+const select8 = w8.append('select').attr('id', 'w8');
+const options8 = ['Teacher-1', 'Student-1', 'Student-2'];
+select8.selectAll('option')
+    .data(options8)
+    .enter()
+    .append('option')
+    .text(d => d);
+select8
+    .on('change', e => {
+        const value = document.getElementById('w8').selectedIndex;
+        d3.json(`/widget/8?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select8.node().selectedIndex = 0;
+select8.dispatch('change');
+        
+const w9 = d2.append('div').classed('div4', true).style('position', 'absolute');
+w9.style('width', '36px')
+    .style('height', '20px')
+    .style('left', '1548px')
+    .style('top', '30px');
+const p9 = w9.append('p')
+    .text('and')
+    .style('position', 'absolute')
+    .style('height', '20px')
+    .style('top', '-15px');
+p9.style('left', `-${p9.node().getBoundingClientRect().width+10+('and'.length>10?24:0) + ('and'.length>15?42:0)}px`); 
+        
+const select9 = w9.append('select').attr('id', 'w9');
+const options9 = ['Teacher-1', 'Student-1', 'Student-2'];
+select9.selectAll('option')
+    .data(options9)
+    .enter()
+    .append('option')
+    .text(d => d);
+select9
+    .on('change', e => {
+        const value = document.getElementById('w9').selectedIndex;
+        d3.json(`/widget/9?value=${value}`).then(r => {
+            for(let i of r) triggers[i].dispatch('click');
+        });;
+    });
+select9.node().selectedIndex = 0;
+select9.dispatch('change');
+        
+        //mode.click();
+        empty_r={};
+        filter2.selectedIndex = 0;
+        filter2_.dispatch('change');
+</script>
